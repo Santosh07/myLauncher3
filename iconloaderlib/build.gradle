@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion COMPILE_SDK
+    compileSdkVersion 29
     buildToolsVersion BUILD_TOOLS_VERSION
     publishNonDefault true
 
@@ -36,4 +36,9 @@ android {
 
 dependencies {
     implementation "androidx.core:core:${ANDROID_X_VERSION}"
+}
+
+repositories {
+    google()
+    jcenter()
 }

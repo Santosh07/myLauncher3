@@ -15,8 +15,8 @@
  */
 package com.android.launcher3.settings;
 
-import static com.android.launcher3.uioverrides.plugins.PluginManagerWrapper.PLUGIN_CHANGED;
-import static com.android.launcher3.uioverrides.plugins.PluginManagerWrapper.pluginEnabledKey;
+//import static com.android.launcher3.uioverrides.plugins.PluginManagerWrapper.PLUGIN_CHANGED;
+//import static com.android.launcher3.uioverrides.plugins.PluginManagerWrapper.pluginEnabledKey;
 
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
@@ -41,7 +41,7 @@ import android.view.View;
 import com.android.launcher3.R;
 import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.config.FlagTogglerPrefUi;
-import com.android.launcher3.uioverrides.plugins.PluginManagerWrapper;
+//import com.android.launcher3.uioverrides.plugins.PluginManagerWrapper;
 
 import java.util.List;
 import java.util.Set;
@@ -143,40 +143,47 @@ public class DeveloperOptionsFragment extends PreferenceFragment {
         if (mPluginsCategory != null) {
             mPreferenceScreen.removePreference(mPluginsCategory);
         }
-        if (!PluginManagerWrapper.hasPlugins(getActivity())) {
+//        if (!PluginManagerWrapper.hasPlugins(getActivity())) {
+//            mPluginsCategory = null;
+//            return;
+//        }
+        if (!false) {
             mPluginsCategory = null;
             return;
         }
-        mPluginsCategory = newCategory("Plugins");
 
-        PluginManagerWrapper manager = PluginManagerWrapper.INSTANCE.get(getContext());
-        Context prefContext = getContext();
-        PackageManager pm = getContext().getPackageManager();
+        //Accel: Code should never reach here
 
-        Set<String> pluginActions = manager.getPluginActions();
-        ArrayMap<String, ArraySet<String>> plugins = new ArrayMap<>();
-        for (String action : pluginActions) {
-            String name = toName(action);
-            List<ResolveInfo> result = pm.queryIntentServices(
-                    new Intent(action), PackageManager.MATCH_DISABLED_COMPONENTS);
-            for (ResolveInfo info : result) {
-                String packageName = info.serviceInfo.packageName;
-                if (!plugins.containsKey(packageName)) {
-                    plugins.put(packageName, new ArraySet<>());
-                }
-                plugins.get(packageName).add(name);
-            }
-        }
-
-        List<PackageInfo> apps = pm.getPackagesHoldingPermissions(new String[]{PLUGIN_PERMISSION},
-                PackageManager.MATCH_DISABLED_COMPONENTS | PackageManager.GET_SERVICES);
-        PreferenceDataStore enabled = manager.getPluginEnabler();
-        apps.forEach(app -> {
-            if (!plugins.containsKey(app.packageName)) return;
-            SwitchPreference pref = new PluginPreference(prefContext, app, enabled);
-            pref.setSummary("Plugins: " + toString(plugins.get(app.packageName)));
-            mPluginsCategory.addPreference(pref);
-        });
+//        mPluginsCategory = newCategory("Plugins");
+//
+//        PluginManagerWrapper manager = PluginManagerWrapper.INSTANCE.get(getContext());
+//        Context prefContext = getContext();
+//        PackageManager pm = getContext().getPackageManager();
+//
+//        Set<String> pluginActions = manager.getPluginActions();
+//        ArrayMap<String, ArraySet<String>> plugins = new ArrayMap<>();
+//        for (String action : pluginActions) {
+//            String name = toName(action);
+//            List<ResolveInfo> result = pm.queryIntentServices(
+//                    new Intent(action), PackageManager.MATCH_DISABLED_COMPONENTS);
+//            for (ResolveInfo info : result) {
+//                String packageName = info.serviceInfo.packageName;
+//                if (!plugins.containsKey(packageName)) {
+//                    plugins.put(packageName, new ArraySet<>());
+//                }
+//                plugins.get(packageName).add(name);
+//            }
+//        }
+//
+//        List<PackageInfo> apps = pm.getPackagesHoldingPermissions(new String[]{PLUGIN_PERMISSION},
+//                PackageManager.MATCH_DISABLED_COMPONENTS | PackageManager.GET_SERVICES);
+//        PreferenceDataStore enabled = manager.getPluginEnabler();
+//        apps.forEach(app -> {
+//            if (!plugins.containsKey(app.packageName)) return;
+//            SwitchPreference pref = new PluginPreference(prefContext, app, enabled);
+//            pref.setSummary("Plugins: " + toString(plugins.get(app.packageName)));
+//            mPluginsCategory.addPreference(pref);
+//        });
     }
 
     private String toString(ArraySet<String> plugins) {
@@ -203,85 +210,85 @@ public class DeveloperOptionsFragment extends PreferenceFragment {
         return b.toString();
     }
 
-    private static class PluginPreference extends SwitchPreference {
-        private final boolean mHasSettings;
-        private final PackageInfo mInfo;
-        private final PreferenceDataStore mPluginEnabler;
-
-        public PluginPreference(Context prefContext, PackageInfo info,
-                PreferenceDataStore pluginEnabler) {
-            super(prefContext);
-            PackageManager pm = prefContext.getPackageManager();
-            mHasSettings = pm.resolveActivity(new Intent(ACTION_PLUGIN_SETTINGS)
-                    .setPackage(info.packageName), 0) != null;
-            mInfo = info;
-            mPluginEnabler = pluginEnabler;
-            setTitle(info.applicationInfo.loadLabel(pm));
-            setChecked(isPluginEnabled());
-            setWidgetLayoutResource(R.layout.switch_preference_with_settings);
-        }
-
-        private boolean isEnabled(ComponentName cn) {
-            return mPluginEnabler.getBoolean(pluginEnabledKey(cn), true);
-
-        }
-
-        private boolean isPluginEnabled() {
-            for (int i = 0; i < mInfo.services.length; i++) {
-                ComponentName componentName = new ComponentName(mInfo.packageName,
-                        mInfo.services[i].name);
-                if (!isEnabled(componentName)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        @Override
-        protected boolean persistBoolean(boolean isEnabled) {
-            boolean shouldSendBroadcast = false;
-            for (int i = 0; i < mInfo.services.length; i++) {
-                ComponentName componentName = new ComponentName(mInfo.packageName,
-                        mInfo.services[i].name);
-
-                if (isEnabled(componentName) != isEnabled) {
-                    mPluginEnabler.putBoolean(pluginEnabledKey(componentName), isEnabled);
-                    shouldSendBroadcast = true;
-                }
-            }
-            if (shouldSendBroadcast) {
-                final String pkg = mInfo.packageName;
-                final Intent intent = new Intent(PLUGIN_CHANGED,
-                        pkg != null ? Uri.fromParts("package", pkg, null) : null);
-                getContext().sendBroadcast(intent);
-            }
-            setChecked(isEnabled);
-            return true;
-        }
-
-        @Override
-        public void onBindViewHolder(PreferenceViewHolder holder) {
-            super.onBindViewHolder(holder);
-            holder.findViewById(R.id.settings).setVisibility(mHasSettings ? View.VISIBLE
-                    : View.GONE);
-            holder.findViewById(R.id.divider).setVisibility(mHasSettings ? View.VISIBLE
-                    : View.GONE);
-            holder.findViewById(R.id.settings).setOnClickListener(v -> {
-                ResolveInfo result = v.getContext().getPackageManager().resolveActivity(
-                        new Intent(ACTION_PLUGIN_SETTINGS).setPackage(
-                                mInfo.packageName), 0);
-                if (result != null) {
-                    v.getContext().startActivity(new Intent().setComponent(
-                            new ComponentName(result.activityInfo.packageName,
-                                    result.activityInfo.name)));
-                }
-            });
-            holder.itemView.setOnLongClickListener(v -> {
-                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.fromParts("package", mInfo.packageName, null));
-                getContext().startActivity(intent);
-                return true;
-            });
-        }
-    }
+//    private static class PluginPreference extends SwitchPreference {
+//        private final boolean mHasSettings;
+//        private final PackageInfo mInfo;
+//        private final PreferenceDataStore mPluginEnabler;
+//
+//        public PluginPreference(Context prefContext, PackageInfo info,
+//                PreferenceDataStore pluginEnabler) {
+//            super(prefContext);
+//            PackageManager pm = prefContext.getPackageManager();
+//            mHasSettings = pm.resolveActivity(new Intent(ACTION_PLUGIN_SETTINGS)
+//                    .setPackage(info.packageName), 0) != null;
+//            mInfo = info;
+//            mPluginEnabler = pluginEnabler;
+//            setTitle(info.applicationInfo.loadLabel(pm));
+//            setChecked(isPluginEnabled());
+//            setWidgetLayoutResource(R.layout.switch_preference_with_settings);
+//        }
+//
+//        private boolean isEnabled(ComponentName cn) {
+//            return mPluginEnabler.getBoolean(pluginEnabledKey(cn), true);
+//
+//        }
+//
+//        private boolean isPluginEnabled() {
+//            for (int i = 0; i < mInfo.services.length; i++) {
+//                ComponentName componentName = new ComponentName(mInfo.packageName,
+//                        mInfo.services[i].name);
+//                if (!isEnabled(componentName)) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
+//
+//        @Override
+//        protected boolean persistBoolean(boolean isEnabled) {
+//            boolean shouldSendBroadcast = false;
+//            for (int i = 0; i < mInfo.services.length; i++) {
+//                ComponentName componentName = new ComponentName(mInfo.packageName,
+//                        mInfo.services[i].name);
+//
+//                if (isEnabled(componentName) != isEnabled) {
+//                    mPluginEnabler.putBoolean(pluginEnabledKey(componentName), isEnabled);
+//                    shouldSendBroadcast = true;
+//                }
+//            }
+//            if (shouldSendBroadcast) {
+//                final String pkg = mInfo.packageName;
+//                final Intent intent = new Intent(PLUGIN_CHANGED,
+//                        pkg != null ? Uri.fromParts("package", pkg, null) : null);
+//                getContext().sendBroadcast(intent);
+//            }
+//            setChecked(isEnabled);
+//            return true;
+//        }
+//
+//        @Override
+//        public void onBindViewHolder(PreferenceViewHolder holder) {
+//            super.onBindViewHolder(holder);
+//            holder.findViewById(R.id.settings).setVisibility(mHasSettings ? View.VISIBLE
+//                    : View.GONE);
+//            holder.findViewById(R.id.divider).setVisibility(mHasSettings ? View.VISIBLE
+//                    : View.GONE);
+//            holder.findViewById(R.id.settings).setOnClickListener(v -> {
+//                ResolveInfo result = v.getContext().getPackageManager().resolveActivity(
+//                        new Intent(ACTION_PLUGIN_SETTINGS).setPackage(
+//                                mInfo.packageName), 0);
+//                if (result != null) {
+//                    v.getContext().startActivity(new Intent().setComponent(
+//                            new ComponentName(result.activityInfo.packageName,
+//                                    result.activityInfo.name)));
+//                }
+//            });
+//            holder.itemView.setOnLongClickListener(v -> {
+//                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+//                intent.setData(Uri.fromParts("package", mInfo.packageName, null));
+//                getContext().startActivity(intent);
+//                return true;
+//            });
+//        }
+//    }
 }

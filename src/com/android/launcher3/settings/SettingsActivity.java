@@ -37,7 +37,7 @@ import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.graphics.GridOptionsProvider;
-import com.android.launcher3.uioverrides.plugins.PluginManagerWrapper;
+//import com.android.launcher3.uioverrides.plugins.PluginManagerWrapper;
 import com.android.launcher3.util.SecureSettingsObserver;
 
 import androidx.preference.Preference;
@@ -227,9 +227,10 @@ public class SettingsActivity extends Activity
                     return FeatureFlags.showFlagTogglerUi(getContext());
 
                 case DEVELOPER_OPTIONS_KEY:
+                    return false;
                     // Show if plugins are enabled or flag UI is enabled.
-                    return FeatureFlags.showFlagTogglerUi(getContext()) ||
-                            PluginManagerWrapper.hasPlugins(getContext());
+//                    return FeatureFlags.showFlagTogglerUi(getContext()) ||
+//                            PluginManagerWrapper.hasPlugins(getContext());
                 case GRID_OPTIONS_PREFERENCE_KEY:
                     return Utilities.isDevelopersOptionsEnabled(getContext()) &&
                             Utilities.IS_DEBUG_DEVICE &&
